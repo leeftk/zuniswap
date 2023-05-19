@@ -14,41 +14,70 @@ async function main() {
   }
 
   // ethers is available in the global scope
-  const [deployer] = await ethers.getSigners();
+  const [deployer, alice, bob] = await ethers.getSigners();
+
+  //deploy spacecoin
+  const SpaceCoin = await ethers.getContractFactory("SpaceCoin");
+  const spacecoin = await SpaceCoin.deploy(alice.address,bob.address);
+  await spacecoin.deployed();
+  
+  //deploy spacelp
+  const SpaceLP = await ethers.getContractFactory("SpaceLP");
+  const spacelp = await SpaceLP.deploy(spacecoin.address);
+  await spacelp.deployed();
+  
+  //deploy spacerouter
+  const SpaceRouter = await ethers.getContractFactory("SpaceRouter");
+  const spacerouter = await SpaceRouter.deploy(spacelp.address,spacecoin.address);
+  await spacerouter.deployed();
+
+  //save frontend files
+  console.log("router")
+  saveFrontendFiles(spacerouter,"SpaceRouter");
+  console.log("router")
+  saveFrontendFiles(spacelp,"SpaceLP");
+  saveFrontendFiles(spacecoin,"SpaceCoin");
   console.log(
     "Deploying the contracts with the account:",
-    await deployer.getAddress()
+    await deployer.getAddress(),
+    "SpaceCoin address:",
+    await spacecoin.address,
+    "SpaceLP address:",
+    await spacelp.address,
+    "SpaceRouter address:",
+    await spacerouter.address
   );
 
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  const Token = await ethers.getContractFactory("Token");
-  const token = await Token.deploy();
-  await token.deployed();
-
-  console.log("Token address:", token.address);
-
-  // We also save the contract's artifacts and address in the frontend directory
-  saveFrontendFiles(token);
 }
 
-function saveFrontendFiles(token) {
+function saveFrontendFiles(token, name) {
   const fs = require("fs");
   const contractsDir = path.join(__dirname, "..", "frontend", "src", "contracts");
+  const contractAddressPath = path.join(contractsDir, "contract-address.json");
 
   if (!fs.existsSync(contractsDir)) {
     fs.mkdirSync(contractsDir);
   }
 
+  let contractAddresses = {};
+  if (fs.existsSync(contractAddressPath)) {
+    const existingData = fs.readFileSync(contractAddressPath);
+    contractAddresses = JSON.parse(existingData);
+  }
+
+  contractAddresses[name] = token.address;
+
   fs.writeFileSync(
-    path.join(contractsDir, "contract-address.json"),
-    JSON.stringify({ Token: token.address }, undefined, 2)
+    contractAddressPath,
+    JSON.stringify(contractAddresses, undefined, 2)
   );
 
-  const TokenArtifact = artifacts.readArtifactSync("Token");
+  const TokenArtifact = artifacts.readArtifactSync(name);
 
   fs.writeFileSync(
-    path.join(contractsDir, "Token.json"),
+    path.join(contractsDir, name + ".json"),
     JSON.stringify(TokenArtifact, null, 2)
   );
 }
@@ -59,3 +88,5 @@ main()
     console.error(error);
     process.exit(1);
   });
+
+

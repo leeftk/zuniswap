@@ -5,11 +5,14 @@ import { ethers } from "ethers";
 
 // We import the contract's artifacts and address here, as we are going to be
 // using them with ethers
-import TokenArtifact from "../contracts/Token.json";
-import Router from "../contracts/SpaceRouter.sol/SpaceRouter.json";
+import SpaceRouter from "../contracts/SpaceRouter.sol/SpaceRouter.json";
 import SpaceLP from "../contracts/SpaceLP.sol/SpaceLP.json";
 import SpaceCoin from "../contracts/SpaceCoin/SpaceCoin.json";
 import tokenContractAddress from "../contracts/contract-address.json";
+import SpaceRouterAddress from "../contracts/contract-address.json";
+import SpaceLPAddress from "../contracts/contract-address.json";
+import SpaceCoinAddress from "../contracts/contract-address.json";
+
 
 // All the logic of this dapp is contained in the Dapp component.
 // These other components are just presentational ones: they don't have any
@@ -75,7 +78,7 @@ export class Dapp extends React.Component {
     // Note that we pass it a callback that is going to be called when the user
     // clicks a button. This callback just calls the _connectWallet method.
     if (!this.state.selectedAddress) {
-      console.log("SpaceLP", Router);
+      console.log("SpaceLP", SpaceRouter);
       console.log("SpaceCoin", SpaceCoin);
       return (
         <ConnectWallet 
@@ -139,27 +142,7 @@ export class Dapp extends React.Component {
 
         <div className="row">
           <div className="col-12">
-            {/*
-              If the user has no tokens, we don't show the Transfer form
-            */}
-            {this.state.balance.eq(0) && (
-              <NoTokensMessage selectedAddress={this.state.selectedAddress} />
-            )}
-
-            {/*
-              This component displays a form that the user can use to send a 
-              transaction and transfer some tokens.
-              The component doesn't have logic, it just calls the transferTokens
-              callback.
-            */}
-            {this.state.balance.gt(0) && (
-              <Transfer
-                transferTokens={(to, amount) =>
-                  this._transferTokens(to, amount)
-                }
-                tokenSymbol={this.state.tokenData.symbol}
-              />
-            )}
+            <Transfer>  </Transfer>
           </div>
         </div>
       </div>
@@ -226,27 +209,27 @@ export class Dapp extends React.Component {
 
     // Then, we initialize the contract using that provider and the token's
     // artifact. You can do this same thing with your contracts.
-    this._token = new ethers.Contract(
-      tokenContractAddress.Token,
-      TokenArtifact.abi,
-      this._provider.getSigner(0)
-    );
+    // this._token = new ethers.Contract(
+    //   tokenContractAddress,
+    //   TokenArtifact.abi,
+    //   this._provider.getSigner(0)
+    // );
     //initializer router
     this._router = new ethers.Contract(
-      tokenContractAddress.Router,
-      RouterArtifact.abi,
+      SpaceRouter,
+      SpaceRouterAddress.abi,
       this._provider.getSigner(0)
     );
     //initializer spacecoin
     this._spacecoin = new ethers.Contract(
-      tokenContractAddress.SpaceCoin,
-      SpaceCoinArtifact.abi,
+      SpaceCoinAddress,
+      SpaceCoin,
       this._provider.getSigner(0)
     );
     //initializer spaceLP 
     this._spaceLP = new ethers.Contract(
-      tokenContractAddress.SpaceLP,
-      SpaceLPArtifact.abi,
+      SpaceLPAddress,
+      SpaceLP,
       this._provider.getSigner(0)
     );
   }

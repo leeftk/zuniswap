@@ -1,13 +1,5 @@
-# Hardhat Boilerplate
-
-This repository contains a sample project that you can use as the starting point
-for your Ethereum project. It's also a great fit for learning the basics of
-smart contract development.
-
-This project is intended to be used with the
-[Hardhat Beginners Tutorial](https://hardhat.org/tutorial), but you should be
-able to follow it by yourself by reading the README and exploring its
-`contracts`, `tests`, `scripts` and `frontend` directories.
+## Zuniswap
+This repo is a implementation of an AMM based on the Uniswap core contracts.
 
 ## Quick start
 
@@ -16,75 +8,39 @@ dependencies:
 
 ```sh
 git clone https://github.com/NomicFoundation/hardhat-boilerplate.git
-cd hardhat-boilerplate
 npm install
 ```
 
 Once installed, let's run Hardhat's testing network:
 
-```sh
-npx hardhat node
-```
-
-Then, on a new terminal, go to the repository's root folder and run this to
-deploy your contract:
 
 ```sh
-npx hardhat run scripts/deploy.js --network localhost
+npx hardhat test
 ```
 
-Finally, we can run the frontend with:
+## Code Coverage Report
 
-```sh
-cd frontend
-npm install
-npm start
-```
+--------------------|----------|----------|----------|----------|----------------|
+File                |  % Stmts | % Branch |  % Funcs |  % Lines |Uncovered Lines |
+--------------------|----------|----------|----------|----------|----------------|
+ contracts/         |     57.8 |    21.11 |       56 |    53.06 |                |
+  Ico.sol           |        0 |        0 |        0 |        0 |... 192,193,194 |
+  LiquidityPool.sol |      100 |      100 |      100 |      100 |                |
+  Router.sol        |      100 |      100 |      100 |      100 |                |
+  SpaceCoin.sol     |    54.55 |    16.67 |    66.67 |    57.14 |... 44,45,46,47 |
+  SpaceLP.sol       |    92.31 |       70 |      100 |    90.91 |       43,44,45 |
+  SpaceRouter.sol   |    86.84 |    42.31 |      100 |    88.89 | 35,45,46,47,48 |
+--------------------|----------|----------|----------|----------|----------------|
+All files           |     57.8 |    21.11 |       56 |    53.06 |                |
+--------------------|----------|----------|----------|----------|----------------|
 
-Open [http://localhost:3000/](http://localhost:3000/) to see your Dapp. You will
-need to have [Coinbase Wallet](https://www.coinbase.com/wallet) or [Metamask](https://metamask.io) installed and listening to
-`localhost 8545`.
 
-## User Guide
+## Testnet Deploy Information
 
-You can find detailed instructions on using this repository and many tips in [its documentation](https://hardhat.org/tutorial).
+| Contract  | Address Etherscan Link |
+| --------- | ---------------------- |
+| SpaceCoin | `https://sepolia.etherscan.io/address/0x27c8c02700951A3de9a122f5662AfFC4F4c64d43`           |
+| ICO       | `https://sepolia.etherscan.io/address/0xF3a7c9424aD604f8A5d8a0Ab463A1E6F09C8C729`           |
+| Router    | `https://sepolia.etherscan.io/address/0x5C847c7b98218a5B68829e9D1908860b8dDb1236`           |
+| Pool      | `https://sepolia.etherscan.io/address/0x618B406D090e8271d7f994eC404b84353B77fD98`           |
 
-- [Writing and compiling contracts](https://hardhat.org/tutorial/writing-and-compiling-contracts/)
-- [Setting up the environment](https://hardhat.org/tutorial/setting-up-the-environment/)
-- [Testing Contracts](https://hardhat.org/tutorial/testing-contracts/)
-- [Setting up your wallet](https://hardhat.org/tutorial/boilerplate-project#how-to-use-it)
-- [Hardhat's full documentation](https://hardhat.org/docs/)
-
-For a complete introduction to Hardhat, refer to [this guide](https://hardhat.org/getting-started/#overview).
-
-## What's Included?
-
-This repository uses our recommended hardhat setup, by using our [`@nomicfoundation/hardhat-toolbox`](https://hardhat.org/hardhat-runner/plugins/nomicfoundation-hardhat-toolbox). When you use this plugin, you'll be able to:
-
-- Deploy and interact with your contracts using [ethers.js](https://docs.ethers.io/v5/) and the [`hardhat-ethers`](https://hardhat.org/hardhat-runner/plugins/nomiclabs-hardhat-ethers) plugin.
-- Test your contracts with [Mocha](https://mochajs.org/), [Chai](https://chaijs.com/) and our own [Hardhat Chai Matchers](https://hardhat.org/hardhat-chai-matchers) plugin.
-- Interact with Hardhat Network with our [Hardhat Network Helpers](https://hardhat.org/hardhat-network-helpers).
-- Verify the source code of your contracts with the [hardhat-etherscan](https://hardhat.org/hardhat-runner/plugins/nomiclabs-hardhat-etherscan) plugin.
-- Get metrics on the gas used by your contracts with the [hardhat-gas-reporter](https://github.com/cgewecke/hardhat-gas-reporter) plugin.
-- Measure your tests coverage with [solidity-coverage](https://github.com/sc-forks/solidity-coverage).
-
-This project also includes [a sample frontend/Dapp](./frontend), which uses [Create React App](https://github.com/facebook/create-react-app).
-
-## Troubleshooting
-
-- `Invalid nonce` errors: if you are seeing this error on the `npx hardhat node`
-  console, try resetting your Metamask account. This will reset the account's
-  transaction history and also the nonce. Open Metamask, click on your account
-  followed by `Settings > Advanced > Clear activity tab data`.
-
-## Setting up your editor
-
-[Hardhat for Visual Studio Code](https://hardhat.org/hardhat-vscode) is the official Hardhat extension that adds advanced support for Solidity to VSCode. If you use Visual Studio Code, give it a try!
-
-## Getting help and updates
-
-If you need help with this project, or with Hardhat in general, please read [this guide](https://hardhat.org/hardhat-runner/docs/guides/getting-help) to learn where and how to get it.
-
-For the latest news about Hardhat, [follow us on Twitter](https://twitter.com/HardhatHQ), and don't forget to star [our GitHub repository](https://github.com/NomicFoundation/hardhat)!
-
-**Happy _building_!**

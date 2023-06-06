@@ -1,5 +1,5 @@
 ## Zuniswap
-This repo is a implementation of an AMM based on the Uniswap core contracts.
+This repo is a implementation of an AMM based on the Uniswap core contracts. The contracts implement a single pool and router contract that accepts ETH and another ERC20. It demonstates knowledge of the constant prodcut formula as well as AMM accounting and the complex logic behind it.
 
 ## Quick start
 

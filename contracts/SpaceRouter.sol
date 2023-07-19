@@ -15,82 +15,75 @@ contract SpaceRouter {
     SpaceLP public spaceLP;
     SpaceCoin public spaceCoin;
 
-    constructor(SpaceLP _spaceLP, SpaceCoin _spaceCoin) payable{
+    constructor(SpaceLP _spaceLP, SpaceCoin _spaceCoin) {
         spaceLP =  _spaceLP;
         spaceCoin = _spaceCoin;
        
     }
 
+    event LiquidityAdded(address indexed from, uint256 amountEth,uint256 amountSpc);
+    event LiquidityRemoved(address indexed from, uint256 amount);
+    event swapSPC(uint spcOutMin);
+    event swapETH(uint spcIn, uint ethOutMin);
+
     /// @notice Provides ETH-SPC liquidity to LP contract
     /// @param spc The desired amount of SPC to be deposited
-    /// @dev The desired amount of ETH to be deposited is indicated by 
-    //    msg.value
-    function addLiquidity(uint256 spc, uint amountSpcDesired) external payable {
+    /// @dev The desired amount of ETH to be deposited is indicated by msg.value  
+    function addLiquidity(uint256 spc) external payable {
         if(msg.value == 0) revert SendMoreETH();
-        (uint reserve1, uint reserve2) = spaceLP.getReserves();
-        uint amountSpc;
-        if(reserve1 == 0 || reserve2 == 0){
+        (uint spcPool, uint ethPool) = spaceLP.getReserves();
+         uint amountSpc; 
+    if(spaceLP.totalSupply() == 0){
+        spaceCoin.transferFrom(msg.sender, address(spaceLP), spc);
+        spaceLP.deposit{value: msg.value}(msg.sender);
+    } else {
+        uint amountEth = spc * ethPool / spcPool; 
+        if(msg.value < amountEth){
+           uint newValueSpc =  msg.value * spcPool / ethPool;  
+           amountSpc = newValueSpc;
+        } else if(msg.value > amountEth){
+             uint ethReturn = msg.value - amountEth;
+            (bool success, ) = msg.sender.call{value: ethReturn}("");
+            if(!success) revert AmountLessThanDesired();
             amountSpc = spc;
         } else {
-            amountSpc = reserve1 * reserve2 * spc;
+            amountSpc = spc;
         }
-        uint amountEth = reserve1 * reserve2 * msg.value;
-        if(reserve1 == 0 && reserve2 == 0) {
-            spaceCoin.transferFrom(msg.sender, address(spaceLP), amountSpc);
-            (bool success, ) = address(spaceLP).call{value: msg.value}("");   
-            require(success, "Transfer failed.");
-            spaceLP.deposit(msg.sender);
+        spaceCoin.transferFrom(msg.sender, address(spaceLP), amountSpc);
+        spaceLP.deposit{value: amountEth}(msg.sender);
 
-        } else if (amountSpcDesired <= amountSpc) {
-            (bool success, ) = address(spaceLP).call{value: amountEth}("");
-            require(success, "Transfer failed.");
-            spaceCoin.transferFrom(msg.sender, address(spaceLP), amountSpc);
-            spaceLP.deposit(msg.sender);     
-        
+    } 
+            emit LiquidityAdded(msg.sender, amountSpc, msg.value);
+
+       
     }
-    }
+    
 
     /// @notice Removes ETH-SPC liquidity from LP contract
     /// @param lpToken The amount of LP tokens being returned
     function removeLiquidity(uint256 lpToken) external { 
-        (uint reserve1, uint reserve2) = spaceLP.getReserves();
-       if(lpToken >= spaceLP.balanceOf(msg.sender)) revert InsufficientLiquidity();
-       if(reserve1 == 0 || reserve2 == 0) revert InsufficientLiquidity();
-        uint amount1 = lpToken / spaceLP.totalSupply() * reserve1;
-        uint amount2 = lpToken / spaceLP.totalSupply() * reserve2;
-        spaceLP.transferFrom(address(this), msg.sender, amount1);
-        (bool success, ) = msg.sender.call{value: amount2}("");
-        require(success, "Transfer failed.");
+      (uint spcPool, uint ethPool) = spaceLP.getReserves();
+       if(spcPool == 0 || ethPool == 0) revert InsufficientLiquidity();
+        spaceLP.transferFrom(msg.sender, address(spaceLP), lpToken);
         spaceLP.withdraw(msg.sender);
     }
 
     /// @notice Swaps ETH for SPC in LP contract
     /// @param spcOutMin The minimum acceptable amout of SPC to be received
     function swapETHForSPC(uint256 spcOutMin) external payable{ 
-        (uint reserve1, uint reserve2) = spaceLP.getReserves();
-        uint k = reserve1 * reserve2;
-        uint newReserve2 = reserve1 + msg.value;
-        uint newReserve1 = k / newReserve2;
-        uint amountSpc = reserve1 - newReserve1; 
-        if(amountSpc < spcOutMin) revert AmountLessThanDesired();
-        reserve1 = newReserve1;
-        reserve2 = newReserve2;
-        spaceLP.swap(msg.sender, true, amountSpc);
+       if(msg.value == 0) revert SendMoreETH();
+       uint spcAmount = spaceLP.swap{value: msg.value}(msg.sender, true);
+       if(spcAmount <= spcOutMin) revert AmountLessThanDesired();
     }
 
     /// @notice Swaps SPC for ETH in LP contract
     /// @param spcIn The amount of inbound SPC to be swapped
     /// @param ethOutMin The minimum acceptable amount of ETH to be received
-    function swapSPCForETH(uint256 spcIn, uint256 ethOutMin) external payable{ 
-        (uint reserve1, uint reserve2) = spaceLP.getReserves();
-        uint k = reserve1 * reserve2;
-        uint newReserve1 = reserve1 + spcIn;
-        uint newReserve2 = k / newReserve1;
-        uint amountETH = reserve2 - newReserve2; 
-        if(amountETH < ethOutMin) revert AmountLessThanDesired();
-        reserve1 = newReserve1;
-        reserve2 = newReserve2;
-        spaceLP.swap(msg.sender, false, amountETH);
+    function swapSPCForETH(uint256 spcIn, uint256 ethOutMin) external{ 
+        spaceCoin.transferFrom(msg.sender, address(spaceLP), spcIn);
+        uint actualAmtEthOut = spaceLP.swap(msg.sender, false);
+        if(actualAmtEthOut < ethOutMin) revert AmountLessThanDesired();
+        emit swapETH(spcIn, actualAmtEthOut);
     }
 
 }

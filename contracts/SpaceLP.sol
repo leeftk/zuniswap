@@ -17,8 +17,11 @@ contract SpaceLP is ERC20 {
     }
 
 
-    uint public reserve1;
-    uint public reserve2;
+    uint public spcPool;
+    uint public ethPool;
+
+    event  Withdraw(address indexed to, uint spcOut, uint ethOut);
+    event  Swap(address indexed to, uint spcOut, bool ethOut);
 
 
     mapping(address => uint) private balances;
@@ -28,54 +31,66 @@ contract SpaceLP is ERC20 {
     /// @notice Adds ETH-SPC liquidity to LP contract
     /// @param to The address that will receive the LP tokens
     function deposit(address to) external payable  { 
-        ///mint is find out how many tokens actually got transfeered to the lp contract
-        uint balance1 = spaceCoin.balanceOf(address(this));
-        uint balance2 = address(this).balance;
-        //not super clear why this is bein done
+        uint balanceSpc = spaceCoin.balanceOf(address(this));
+        uint balanceEth = address(this).balance;
         uint liquidity;
-        uint amount1 = balance1 - reserve1;
-        uint amount2 = balance2 - reserve2;
+        uint amountEthIn = balanceEth - ethPool;
+        uint amountSpcIn = balanceSpc - spcPool;
         if (totalSupply() == 0) {
-            reserve1 = amount1;
-            reserve2 = amount2;
-           liquidity = getMin(amount1, amount2);
+            liquidity = getMin(amountEthIn, amountSpcIn);
         } else {
-            uint amount1 = amount1 * totalSupply() / reserve1;
-            uint amount2 = amount2 * totalSupply() / reserve2;
-            liquidity = getMin(amount1, amount2);
+            uint amountSpc =   amountEthIn * ethPool / totalSupply();
+            uint amountETH = amountSpcIn * spcPool / totalSupply();
+            liquidity = getMin(amountSpc, amountETH);
         }
-        reserve1 = spaceCoin.balanceOf(address(this));
-        reserve2 = address(this).balance;
+        spcPool = spaceCoin.balanceOf(address(this));
+        ethPool = address(this).balance;
          _mint(to, liquidity);
     }
 
     /// @notice Returns ETH-SPC liquidity to liquidity provider
     /// @param to The address that will receive the outbound token pair
     function withdraw(address to) external {
-        uint balance1 = address(this).balance;
-        uint balance2 = spaceCoin.balanceOf(address(this));
-        uint amount1 =  balance1 * reserve1 / totalSupply();
-        uint amount2 =  balance2 * reserve2 / totalSupply();
-        _burn(msg.sender, balanceOf(msg.sender));
-
+        uint lpTokenBalance = balanceOf(address(this));
+        // what perfectage of total supply am I burning
+        uint spcOut = lpTokenBalance * spcPool / totalSupply();
+        uint ethOut = lpTokenBalance * ethPool / totalSupply();
+        _burn(address(this), lpTokenBalance);
+        spcPool = spaceCoin.balanceOf(address(this)) - spcOut;
+        spaceCoin.transfer(to, spcOut);
+        ethPool = address(this).balance - ethOut;
+        (bool success, ) = payable(to).call{value: ethOut}("");
+        if (!success) revert InsufficientBalance();
+        emit Withdraw(to, spcOut, ethOut);
      }
 
     /// @notice Swaps ETH for SPC, or SPC for ETH
     /// @param to The address that will receive the outbound SPC or ETH
     /// @param isETHtoSPC Boolean indicating the direction of the trade
-    function swap(address to, bool isETHtoSPC, uint amount) external payable{ 
+    function swap(address to, bool isETHtoSPC) external payable  returns(uint amountOut) { 
+        uint amountOut;
         if (isETHtoSPC) {
-            //send lp conttract the msg.value
-            (bool success, ) = payable(address(this)).call{value: msg.value}("");
-            if (!success) revert InsufficientBalance();
-            spaceCoin.transfer(to, amount);
-
+            uint k = ethPool * spcPool;    
+            uint spacePool = k / address(this).balance;   
+            uint spaceOut = spcPool - spacePool;
+            ethPool = address(this).balance;
+            amountOut = spaceOut;
+            spaceCoin.transfer(to, spaceOut);
+            spcPool = spaceCoin.balanceOf(address(this));
         } else {
-            //send lp contract spacecoin from msg.sender
-            spaceCoin.transferFrom(msg.sender, address(this), amount);
-            (bool success, ) = payable(to).call{value: amount}("");
-            if (!success) revert InsufficientBalance();
+            uint amountSpaceIn = spaceCoin.balanceOf(address(this));
+            uint k = ethPool * spcPool; 
+            uint newEthReserve = k / spaceCoin.balanceOf(address(this));
+            uint ethOut = ethPool - newEthReserve;
+            spcPool = spaceCoin.balanceOf(address(this));
+            ethPool = address(this).balance - ethOut;
+            amountOut = ethOut;
+            (bool success, ) = payable(to).call{value: ethOut}("");
+            if (!success) revert InsufficientBalance();   
         }
+            emit Swap(to, amountOut, isETHtoSPC);
+            return amountOut;
+             
     }
 
     /// @notice Returns the minimum of two numbers
@@ -99,7 +114,7 @@ contract SpaceLP is ERC20 {
     /// @notice Returns the reserves of ETH and SPC
     /// @return The reserves of ETH and SPC
     function getReserves() public view returns (uint, uint) {
-        return (reserve1, reserve2);
+        return (spcPool, ethPool);
     }
     receive() external payable {}
 }

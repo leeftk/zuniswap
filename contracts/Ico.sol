@@ -43,6 +43,7 @@ contract ICO {
     event Redeemed(address indexed from, address indexed to, uint256 amount);
     event Contributed(address indexed from, uint256 _msgvalue, uint256 amount);
     event PhaseAdvanced(Phase phase);
+    event Withdrawn(address to, uint256 amount);
 
     constructor(address _treasury, address[] memory _address) {
         spaceCoin = new SpaceCoin(_treasury, address(this));
@@ -177,7 +178,9 @@ contract ICO {
     }
 
     function withdraw(address _to) external onlyOwner {
+        if (currentPhase != Phase.OPEN) revert PhaseNotAdvanced();
         payable(_to).transfer(address(this).balance);
+        emit Withdrawn(_to, address(this).balance);
     }
 
     /**
